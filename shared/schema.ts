@@ -52,9 +52,43 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   createdAt: true,
 });
 
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  businessId: serial("business_id").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "confirmed", "preparing", "ready", "completed", "cancelled"
+  totalAmount: decimal("total_amount", { precision: 8, scale: 2 }).notNull(),
+  specialInstructions: text("special_instructions"),
+  pickupTime: timestamp("pickup_time"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const orderItems = pgTable("order_items", {
+  id: serial("id").primaryKey(),
+  orderId: serial("order_id").notNull(),
+  menuItemId: serial("menu_item_id").notNull(),
+  quantity: serial("quantity").notNull(),
+  price: decimal("price", { precision: 5, scale: 2 }).notNull(),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
+  id: true,
+});
+
 export type Business = typeof businesses.$inferSelect;
 export type InsertBusiness = z.infer<typeof insertBusinessSchema>;
 export type MenuItem = typeof menuItems.$inferSelect;
 export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Order = typeof orders.$inferSelect;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type OrderItem = typeof orderItems.$inferSelect;
+export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;

@@ -2,12 +2,18 @@ import {
   businesses, 
   menuItems, 
   reviews, 
+  orders,
+  orderItems,
   type Business, 
   type InsertBusiness, 
   type MenuItem, 
   type InsertMenuItem, 
   type Review, 
-  type InsertReview 
+  type InsertReview,
+  type Order,
+  type InsertOrder,
+  type OrderItem,
+  type InsertOrderItem
 } from "@shared/schema";
 
 export interface IStorage {
@@ -28,23 +34,37 @@ export interface IStorage {
   // Review operations
   getReviewsByBusinessId(businessId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
+  
+  // Order operations
+  createOrder(order: InsertOrder, items: InsertOrderItem[]): Promise<Order>;
+  getOrder(id: number): Promise<(Order & { items: (OrderItem & { menuItem: MenuItem })[] }) | undefined>;
+  getOrdersByEmail(email: string): Promise<Order[]>;
+  updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private businesses: Map<number, Business>;
   private menuItems: Map<number, MenuItem>;
   private reviews: Map<number, Review>;
+  private orders: Map<number, Order>;
+  private orderItems: Map<number, OrderItem>;
   private currentBusinessId: number;
   private currentMenuItemId: number;
   private currentReviewId: number;
+  private currentOrderId: number;
+  private currentOrderItemId: number;
 
   constructor() {
     this.businesses = new Map();
     this.menuItems = new Map();
     this.reviews = new Map();
+    this.orders = new Map();
+    this.orderItems = new Map();
     this.currentBusinessId = 1;
     this.currentMenuItemId = 1;
     this.currentReviewId = 1;
+    this.currentOrderId = 1;
+    this.currentOrderItemId = 1;
     
     // Initialize with sample data
     this.initializeSampleData();
@@ -468,6 +488,58 @@ export class MemStorage implements IStorage {
     };
     this.reviews.set(id, review);
     return review;
+  }
+
+  async createOrder(insertOrder: InsertOrder, items: InsertOrderItem[]): Promise<Order> {
+    const orderId = this.currentOrderId++;
+    const order: Order = { 
+      ...insertOrder, 
+      id: orderId, 
+      createdAt: new Date()
+    };
+    this.orders.set(orderId, order);
+
+    // Create order items
+    items.forEach(item => {
+      const orderItemId = this.currentOrderItemId++;
+      const orderItem: OrderItem = {
+        ...item,
+        id: orderItemId,
+        orderId: orderId
+      };
+      this.orderItems.set(orderItemId, orderItem);
+    });
+
+    return order;
+  }
+
+  async getOrder(id: number): Promise<(Order & { items: (OrderItem & { menuItem: MenuItem })[] }) | undefined> {
+    const order = this.orders.get(id);
+    if (!order) return undefined;
+
+    const items = Array.from(this.orderItems.values())
+      .filter(item => item.orderId === id)
+      .map(item => ({
+        ...item,
+        menuItem: this.menuItems.get(item.menuItemId)!
+      }));
+
+    return { ...order, items };
+  }
+
+  async getOrdersByEmail(email: string): Promise<Order[]> {
+    return Array.from(this.orders.values())
+      .filter(order => order.customerEmail === email)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const order = this.orders.get(id);
+    if (!order) return undefined;
+
+    const updatedOrder = { ...order, status };
+    this.orders.set(id, updatedOrder);
+    return updatedOrder;
   }
 }
 

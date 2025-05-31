@@ -36,6 +36,12 @@ export default function BusinessModal({ businessId, onClose }: BusinessModalProp
     { key: "reviews", label: "Reviews", icon: "fas fa-star" },
   ];
 
+  // Placeholder addToCart function
+  const addToCart = (item: MenuItem, businessId: number) => {
+    console.log(`Added ${item.name} from business ${businessId} to cart`);
+    // Implement your cart logic here (e.g., using context or state management)
+  };
+
   return (
     <div className="fixed inset-0 z-50">
       <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose}></div>
@@ -94,7 +100,7 @@ export default function BusinessModal({ businessId, onClose }: BusinessModalProp
                   ))}
                 </div>
               </div>
-              
+
               <div className="md:ml-6 flex-shrink-0">
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center">
@@ -120,7 +126,7 @@ export default function BusinessModal({ businessId, onClose }: BusinessModalProp
                     <span>{business.distance} miles away</span>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 space-y-2">
                   <button className="w-full bg-amber-600 text-white py-2 px-4 rounded-lg hover:bg-amber-700 transition-colors text-sm">
                     <i className="fas fa-directions mr-2"></i>Get Directions
@@ -160,14 +166,22 @@ export default function BusinessModal({ businessId, onClose }: BusinessModalProp
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {items.map((item) => (
-                          <div key={item.id} className="flex justify-between items-center py-2">
-                            <div>
-                              <h5 className="font-medium text-gray-900">{item.name}</h5>
+                          <div key={item.id} className="flex justify-between items-start py-3 border-b border-gray-100 last:border-b-0">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">{item.name}</h4>
                               {item.description && (
-                                <p className="text-sm text-gray-600">{item.description}</p>
+                                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
                               )}
                             </div>
-                            <span className="font-semibold text-amber-600">${item.price}</span>
+                            <div className="flex items-center space-x-3 ml-4">
+                              <span className="font-semibold text-green-600">${item.price}</span>
+                              <button
+                                onClick={() => addToCart(item, businessId)}
+                                className="bg-amber-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-amber-700 transition-colors"
+                              >
+                                Add to Cart
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -249,7 +263,7 @@ export default function BusinessModal({ businessId, onClose }: BusinessModalProp
                       </div>
                     </div>
                   ))}
-                  
+
                   {reviews.length === 0 && (
                     <div className="text-center py-8">
                       <i className="fas fa-comment text-gray-400 text-3xl mb-2"></i>
