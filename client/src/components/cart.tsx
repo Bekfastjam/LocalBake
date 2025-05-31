@@ -27,37 +27,55 @@ export default function Cart() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
       });
-      if (!response.ok) throw new Error('Failed to create order');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create order' }));
+        throw new Error(errorData.message || 'Failed to create order');
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       clearCart();
       setIsCheckoutOpen(false);
       setCustomerInfo({ name: '', email: '', phone: '', specialInstructions: '' });
-      alert('Order placed successfully!');
+      alert(`Order #${data.id} placed successfully! You can track it using your email.`);
+    },
+    onError: (error) => {
+      alert(`Failed to place order: ${error.message}`);
     }
   });
 
   const handleCheckout = () => {
-    if (!customerInfo.name || !customerInfo.email) {
+    if (!customerInfo.name.trim() || !customerInfo.email.trim()) {
       alert('Please fill in name and email');
+      return;
+    }
+
+    if (!state.businessId || state.items.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerInfo.email)) {
+      alert('Please enter a valid email address');
       return;
     }
 
     const orderItems = state.items.map(item => ({
       menuItemId: item.id,
       quantity: item.quantity,
-      price: item.price
+      price: parseFloat(item.price.toString())
     }));
 
     const orderData = {
       order: {
-        customerName: customerInfo.name,
-        customerEmail: customerInfo.email,
-        customerPhone: customerInfo.phone,
+        customerName: customerInfo.name.trim(),
+        customerEmail: customerInfo.email.trim(),
+        customerPhone: customerInfo.phone.trim() || null,
         businessId: state.businessId,
-        totalAmount: getCartTotal().toFixed(2),
-        specialInstructions: customerInfo.specialInstructions
+        totalAmount: parseFloat(getCartTotal().toFixed(2)),
+        specialInstructions: customerInfo.specialInstructions.trim() || null
       },
       items: orderItems
     };

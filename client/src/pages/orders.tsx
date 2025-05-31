@@ -8,10 +8,17 @@ export default function Orders() {
   const [email, setEmail] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
 
-  const { data: orders = [], isLoading } = useQuery<Order[]>({
+  const { data: orders = [], isLoading, error } = useQuery<Order[]>({
     queryKey: ['/api/orders', { email: searchEmail }],
-    queryFn: () => fetch(`/api/orders?email=${searchEmail}`).then(res => res.json()),
-    enabled: !!searchEmail
+    queryFn: async () => {
+      const response = await fetch(`/api/orders?email=${searchEmail}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      return response.json();
+    },
+    enabled: !!searchEmail,
+    retry: 1
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -62,10 +69,17 @@ export default function Orders() {
         {isLoading && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto"></div>
+            <p className="text-gray-500 mt-2">Loading orders...</p>
           </div>
         )}
 
-        {searchEmail && !isLoading && orders.length === 0 && (
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-red-500">Failed to load orders. Please try again.</p>
+          </div>
+        )}
+
+        {searchEmail && !isLoading && !error && orders.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500">No orders found for {searchEmail}</p>
           </div>

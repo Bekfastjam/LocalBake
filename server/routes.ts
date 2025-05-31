@@ -64,9 +64,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/orders", async (req, res) => {
     try {
       const { order, items } = req.body;
+      
+      // Validate required fields
+      if (!order || !items || !Array.isArray(items)) {
+        return res.status(400).json({ message: "Invalid order data" });
+      }
+      
+      if (!order.customerName || !order.customerEmail || !order.businessId) {
+        return res.status(400).json({ message: "Missing required customer information" });
+      }
+      
+      if (items.length === 0) {
+        return res.status(400).json({ message: "Order must contain at least one item" });
+      }
+      
+      // Validate business exists
+      const business = await storage.getBusiness(order.businessId);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      
       const newOrder = await storage.createOrder(order, items);
       res.status(201).json(newOrder);
     } catch (error) {
+      console.error('Error creating order:', error);
       res.status(500).json({ message: "Failed to create order" });
     }
   });

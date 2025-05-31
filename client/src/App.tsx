@@ -4,6 +4,7 @@ import Home from "./pages/home";
 import Orders from "./pages/orders";
 import NotFound from "./pages/not-found";
 import Cart from "./components/cart";
+import TestOrder from "./components/test-order";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,6 +32,7 @@ function App() {
               <Route component={NotFound} />
             </Switch>
             <Cart />
+            {process.env.NODE_ENV === 'development' && <TestOrder />}
           </div>
         </CartProvider>
       </TooltipProvider>
